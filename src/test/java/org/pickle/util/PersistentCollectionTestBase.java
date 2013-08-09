@@ -54,7 +54,7 @@ public abstract class PersistentCollectionTestBase {
         assertTrue(dataDir.delete());
       }
     }
-    catch (SQLException e) {
+    catch (Exception e) {
       Log.error("Could not delete database files.", e);
     }
   }
