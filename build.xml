@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<project name="Pickle" default="test" basedir=".">
+  
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="bin/main"/>
+    <mkdir dir="bin/test"/>
+  </target>
+  
+  <target name="compile" depends="init">
+
+    <javac srcdir="${basedir}/src/main" destdir="bin/main" source="1.5" target="1.5" debug="on">
+      <classpath>
+        <fileset dir="lib/main">
+          <include name="*.jar"/>
+        </fileset>
+      </classpath>
+      <compilerarg value="-Xlint:all,-serial"/> 
+    </javac>
+    <copy todir="bin/main">
+      <fileset dir="src/main">
+        <exclude name="**/*.java"/>
+      </fileset>
+    </copy>
+    
+    <javac srcdir="${basedir}/src/test" destdir="bin/test" source="1.5" target="1.5" debug="on">
+      <classpath>
+        <pathelement location="bin/main"/>
+        <fileset dir="lib/main">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="lib/test">
+          <include name="*.jar"/>
+        </fileset>
+      </classpath>
+      <compilerarg value="-Xlint:all,-serial"/> 
+    </javac>
+    <copy todir="bin/test">
+      <fileset dir="src/test">
+        <exclude name="**/*.java"/>
+      </fileset>
+    </copy>
+
+  </target>
+
+  <target name="test" depends="compile">
+    <junit fork="on" printsummary="on" haltonfailure="on">
+      <formatter type="plain"/>
+      <classpath>
+        <pathelement location="bin/main"/>
+        <pathelement location="bin/test"/>
+        <fileset dir="lib/main">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="lib/test">
+          <include name="*.jar"/>
+        </fileset>
+      </classpath>      
+      <batchtest>
+        <fileset dir="src/test">
+          <include name="**/*Test.java"/>
+        </fileset>
+      </batchtest>
+      <sysproperty key="java.util.logging.config.file" value="${basedir}/logging.properties"/>
+    </junit>
+  </target>
+  
+  <target name="doc" depends="compile">
+    <javadoc destdir="doc/api" author="true" version="true" use="true" windowtitle="Pickle">
+
+        <packageset dir="src/main" defaultexcludes="yes">
+          <include name="org/pickle/**"/>
+        </packageset>
+
+        <doctitle><![CDATA[<h1>Pickle: Persistence, Concurrency, and Logging for Java</h1>]]></doctitle>
+          <bottom><![CDATA[<i>Copyright &#169; 2008 Steven R. Farley. All Rights Reserved.</i>]]></bottom>
+        <!-- <tag name="todo" scope="all" description="To do:"/>
+        <group title="Group 1 Packages" packages="com.dummy.test.a*"/>
+        <group title="Group 2 Packages" packages="com.dummy.test.b*:com.dummy.test.c*"/>-->
+        <link offline="true" href="http://java.sun.com/j2se/1.5.0/docs/api/" packagelistLoc="doc"/>
+        <!-- <link href="http://developer.java.sun.com/developer/products/xml/docs/api/"/> -->
+      </javadoc>
+  </target>
+  
+  <target name="clean">
+    <delete dir="bin"/>
+    <delete dir="doc/api"/>
+    <delete>
+      <fileset dir="${basedir}" includes="TEST-*.txt"/>
+    </delete>
+  </target>
+  
+  <target name="all" depends="clean, test, doc"/>
+  
+</project>
