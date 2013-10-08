@@ -33,11 +33,12 @@ public class PersistentQueue<E extends Serializable>
     }
     private ConnectionManager cm;
 
-    public PersistentQueue(File dataDir) {
+    public PersistentQueue(final File dataDir) {
         cm = new ConnectionManager(dataDir, SQL.CREATE_TABLE);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
+                Log.info("Compacting database at {0}", dataDir);
                 try {
                     cm.getConnection().createStatement().execute(SQL.SHUTDOWN_COMPACT);
                 } catch (SQLException ex) {
@@ -45,6 +46,12 @@ public class PersistentQueue<E extends Serializable>
                 }
             }
         });
+    }
+    
+    public synchronized void compact() {
+        if(this.cm != null) {
+            this.cm.compact();
+        }
     }
 
     @Override

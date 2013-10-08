@@ -13,7 +13,7 @@ import org.pickle.logging.Log;
 
 public class PersistentBlockingQueueTest extends PersistentQueueTest {
   
-  private BlockingQueue<String> blockingQueue;
+  private PersistentBlockingQueue<String> blockingQueue;
   
   @Override
   protected Collection<String> createPersistentCollection(File dataDir) {
@@ -112,5 +112,10 @@ public class PersistentBlockingQueueTest extends PersistentQueueTest {
     for (int i = 0; i < numItems; i++) {
       assertEquals(item(i), target.get(i));
     }
+  }
+  
+  @Test
+  public void testCompact() throws InterruptedException {
+      
   }
 }
