@@ -11,7 +11,6 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.h2.tools.DeleteDbFiles;
 import org.h2.tools.RunScript;
 import org.h2.tools.Script;
-import org.h2.util.IOUtils;
 
 import org.pickle.logging.Log;
 import org.pickle.Disposable;
@@ -46,7 +45,7 @@ public class ConnectionManager implements Disposable {
         JdbcTemplate.executeUpdate(connection, createSql);
     }
 
-    private final void init() {
+    private void init() {
         if (!dataDir.exists() || !dataDir.isDirectory() || !dataDir.canWrite()) {
             throw new DatabaseException(
                     String.format("'%s' is not a writable directory or does not exist.", dataDir));
@@ -70,11 +69,11 @@ public class ConnectionManager implements Disposable {
             dispose();
             File tempFile = File.createTempFile(dataDir.getName(),"-pickle.sql.gz");
             Log.debug("Initial directory size: {0}",getDirectorySize(dataDir));
-            FileOutputStream file = new FileOutputStream(tempFile);
-            GZIPOutputStream out = new GZIPOutputStream(file);
-            Script.execute(jdbcUrl, "sa", "", out);
-            out.close();
-            file.close();
+            try (FileOutputStream file = new FileOutputStream(tempFile)) {
+                GZIPOutputStream out = new GZIPOutputStream(file);
+                Script.execute(jdbcUrl, "sa", "", out);
+                out.close();
+            }
             DeleteDbFiles.execute(dataDir.getAbsolutePath(), dbName, true);
             init();
             FileInputStream fileIn = new FileInputStream(tempFile);
@@ -102,7 +101,6 @@ public class ConnectionManager implements Disposable {
                 size += f.length();
             }
         }
-        System.out.println(dir+" "+size);
         return size;
     }
 
@@ -118,6 +116,7 @@ public class ConnectionManager implements Disposable {
     /**
      * Closes the JDBC Connection. This ConnectionManager becomes unusable.
      */
+    @Override
     public void dispose() {
         try {
             if (!connection.isClosed()) {
