@@ -18,6 +18,7 @@ public class OneLineFormatter extends Formatter {
   public OneLineFormatter() {
   }
 
+  @Override
   public String format(LogRecord record) {
     String stackTrace = "";
     Throwable throwable = record.getThrown();
@@ -27,7 +28,7 @@ public class OneLineFormatter extends Formatter {
       stackTrace = stringWriter.toString();
     }
     return String.format("%s - %s - %s#%s - %s\n%s",
-      record.getLevel().getName(), dateFormat.format(new Date(record.getMillis())),
+      dateFormat.format(new Date(record.getMillis())), record.getLevel().getName(), 
       record.getSourceClassName(), record.getSourceMethodName(), formatMessage(record), stackTrace);
   }
 }

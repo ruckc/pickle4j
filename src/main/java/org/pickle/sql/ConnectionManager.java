@@ -68,7 +68,7 @@ public class ConnectionManager implements Disposable {
         try {
             dispose();
             File tempFile = File.createTempFile(dataDir.getName(),"-pickle.sql.gz");
-            Log.debug("Initial directory size: {0}",getDirectorySize(dataDir));
+            long initialSize = getDirectorySize(dataDir);
             try (FileOutputStream file = new FileOutputStream(tempFile)) {
                 GZIPOutputStream out = new GZIPOutputStream(file);
                 Script.execute(jdbcUrl, "sa", "", out);
@@ -80,9 +80,8 @@ public class ConnectionManager implements Disposable {
             GZIPInputStream gzipIn = new GZIPInputStream(fileIn);
             InputStreamReader in = new InputStreamReader(gzipIn);
             RunScript.execute(connection, in);
-            Log.debug("Temporary compressed script size: {0}",tempFile.length());
             tempFile.delete();
-            Log.debug("Compacted directory size: {0}",getDirectorySize(dataDir));
+            Log.info("Reclaimed space: {0}",initialSize-getDirectorySize(dataDir));
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(),e);
         }
