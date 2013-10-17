@@ -7,12 +7,12 @@ import java.io.*;
 import java.sql.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.apache.log4j.Logger;
 import org.h2.jdbcx.JdbcDataSource;
 import org.h2.tools.DeleteDbFiles;
 import org.h2.tools.RunScript;
 import org.h2.tools.Script;
 
-import org.pickle.logging.Log;
 import org.pickle.Disposable;
 
 /**
@@ -21,7 +21,7 @@ import org.pickle.Disposable;
  * finalize(), but calling dispose() is preferable.
  */
 public class ConnectionManager implements Disposable {
-
+    private static final Logger log = Logger.getLogger(ConnectionManager.class);
     private final String dbName = "pickle";
     private final File dataDir;
     private final String createSql;
@@ -56,7 +56,7 @@ public class ConnectionManager implements Disposable {
                 ds.setUser("sa");
                 ds.setPassword("");
                 connection = ds.getConnection();
-                Log.info("Opened database connection to '%s'.", jdbcUrl);
+                log.info("Opened database connection to "+jdbcUrl);
                 connection.setAutoCommit(false);
             } catch (SQLException e) {
                 throw new DatabaseException("Unable to connect to H2 database at: " + jdbcUrl, e);
@@ -66,6 +66,7 @@ public class ConnectionManager implements Disposable {
 
     public void compact() {
         try {
+            long start = System.currentTimeMillis();
             dispose();
             File tempFile = File.createTempFile(dataDir.getName(),"-pickle.sql.gz");
             long initialSize = getDirectorySize(dataDir);
@@ -81,7 +82,8 @@ public class ConnectionManager implements Disposable {
             InputStreamReader in = new InputStreamReader(gzipIn);
             RunScript.execute(connection, in);
             tempFile.delete();
-            Log.info("Reclaimed space: {0}",initialSize-getDirectorySize(dataDir));
+            long stop = System.currentTimeMillis();
+            log.info("Reclaimed space: "+(initialSize-getDirectorySize(dataDir))+" in "+(stop-start)+"ms");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(),e);
         }
@@ -120,10 +122,10 @@ public class ConnectionManager implements Disposable {
         try {
             if (!connection.isClosed()) {
                 connection.close();
-                Log.info("Closed database connection to '%s'.", jdbcUrl);
+                log.info("Closed database connection to "+jdbcUrl);
             }
         } catch (SQLException e) {
-            Log.warn("Failed to close database connection to '%s'.", jdbcUrl);
+            log.warn("Failed to close database connection to "+jdbcUrl);
         }
     }
 

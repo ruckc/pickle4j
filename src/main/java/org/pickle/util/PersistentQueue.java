@@ -6,25 +6,26 @@ package org.pickle.util;
 import java.util.*;
 import java.io.*;
 import java.sql.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.pickle.Disposable;
-import org.pickle.logging.Log;
 import org.pickle.sql.*;
 
 public class PersistentQueue<E extends Serializable>
         extends AbstractQueue<E> implements Disposable {
 
+    private static final Logger log = Logger.getLogger(PersistentQueue.class);
+
     static final class SQL {
 
-        public static final String CREATE_TABLE =
-                "CREATE TABLE IF NOT EXISTS QUEUE (ID IDENTITY PRIMARY KEY, OBJECT OTHER NOT NULL)";
+        public static final String CREATE_TABLE
+                = "CREATE TABLE IF NOT EXISTS QUEUE (ID IDENTITY PRIMARY KEY, OBJECT OTHER NOT NULL)";
         public static final String INSERT_OBJECT = "INSERT INTO QUEUE (OBJECT) VALUES (?)";
-        public static final String SELECT_OLDEST_OBJECT =
-                "SELECT ID, OBJECT FROM QUEUE WHERE ID = (SELECT MIN(ID) FROM QUEUE)";
+        public static final String SELECT_OLDEST_OBJECT
+                = "SELECT ID, OBJECT FROM QUEUE WHERE ID = (SELECT MIN(ID) FROM QUEUE)";
         public static final String SELECT_NEXT_ID = "SELECT MIN(ID) FROM (SELECT ID FROM QUEUE WHERE ID > ?)";
-        public static final String DELETE_OLDEST_OBJECT =
-                "DELETE FROM QUEUE WHERE ID = (SELECT MIN(ID) FROM QUEUE)";
+        public static final String DELETE_OLDEST_OBJECT
+                = "DELETE FROM QUEUE WHERE ID = (SELECT MIN(ID) FROM QUEUE)";
         public static final String COUNT_OBJECTS = "SELECT COUNT(ID) FROM QUEUE";
         public static final String SELECT_ID = "SELECT ID FROM QUEUE WHERE ID = ?";
         public static final String SELECT_OBJECT = "SELECT OBJECT FROM QUEUE WHERE ID = ?";
@@ -38,18 +39,18 @@ public class PersistentQueue<E extends Serializable>
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                Log.info("Compacting database at {0}", dataDir);
+                log.info("Compacting database at " + dataDir);
                 try {
                     cm.getConnection().createStatement().execute(SQL.SHUTDOWN_COMPACT);
                 } catch (SQLException ex) {
-                    Log.error(ex.getMessage());
+                    log.error(ex.getMessage());
                 }
             }
         });
     }
-    
+
     public synchronized void compact() {
-        if(this.cm != null) {
+        if (this.cm != null) {
             this.cm.compact();
         }
     }
@@ -126,7 +127,7 @@ public class PersistentQueue<E extends Serializable>
             operator.run();
             JdbcTemplate.commitTransaction();
         } catch (RuntimeException e) {
-            Log.debug("Rolling back transaction due to exception", e);
+            log.log(Level.DEBUG, "Rolling back transaction due to exception", e);
             JdbcTemplate.rollbackTransaction();
         }
     }
